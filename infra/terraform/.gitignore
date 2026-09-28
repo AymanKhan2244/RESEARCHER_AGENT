@@ -1,0 +1,12 @@
+# Local state (never commit)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# Variable files with secrets
+terraform.tfvars
+*.auto.tfvars
+
+# Crash log
+crash.log

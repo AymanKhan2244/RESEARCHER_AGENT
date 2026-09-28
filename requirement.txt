@@ -1,0 +1,12 @@
+langchain-groq
+langchain-community
+langchain-core
+pydantic
+langchain-tavily
+langgraph
+nemoguardrails
+fastapi
+uvicorn
+python-dotenv
+pytest-playwright
+langsmith 

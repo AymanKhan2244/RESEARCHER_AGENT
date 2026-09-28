@@ -1,0 +1,35 @@
+########################################################################
+# terraform.tfvars.example
+# Copy to terraform.tfvars and fill in your real values.
+# NEVER commit terraform.tfvars to git!
+########################################################################
+
+aws_region   = "us-east-1"
+project_name = "researcher-agent"
+environment  = "development"
+
+# Network
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+private_subnet_cidrs = ["10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"]
+
+# DNS – must match a Route 53 hosted zone you own
+domain_name = "researcher-agent.example.com"
+
+# Ports
+backend_port  = 10000
+frontend_port = 3000
+nlb_port      = 80
+
+# Container images (update after pushing to ECR)
+backend_image  = "123456789012.dkr.ecr.us-east-1.amazonaws.com/researcher-agent-backend:latest"
+frontend_image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/researcher-agent-frontend:latest"
+
+# ECS task counts
+backend_desired_count  = 2
+frontend_desired_count = 2
+
+# AWS Secrets Manager ARNs – create secrets first then paste ARNs here
+groq_api_key_arn      = "arn:aws:secretsmanager:us-east-1:123456789012:secret:researcher-agent/groq-api-key-XXXXXX"
+tavily_api_key_arn    = "arn:aws:secretsmanager:us-east-1:123456789012:secret:researcher-agent/tavily-api-key-XXXXXX"
+langsmith_api_key_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:researcher-agent/langsmith-api-key-XXXXXX"

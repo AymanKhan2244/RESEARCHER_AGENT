@@ -1,0 +1,101 @@
+########################################################################
+# docker-compose.yml  –  ResearcherAIAgent
+#
+# Services:
+#   nginx    – Nginx load balancer + reverse proxy (port 80 on host)
+#   backend  – FastAPI (Uvicorn) – internal only, port 10000
+#   frontend – Next.js            – internal only, port 3000
+#
+# Usage:
+#   docker compose up --build            # start all services
+#   docker compose up --scale backend=3  # run 3 backend replicas (LB demo)
+#   docker compose down                  # stop and remove containers
+########################################################################
+
+services:
+
+  # -- Nginx Load Balancer + Reverse Proxy -----------------------------
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: researcher-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"      # HTTP  (dev) / redirect-to-HTTPS (prod)
+      - "443:443"    # HTTPS (uncomment SSL block in conf.d/app.conf)
+    volumes:
+      # Mount configs live so you can edit without rebuilding
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # Mount SSL certs (place fullchain.pem + privkey.pem inside nginx/ssl/)
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      # Persist logs on the host for easy inspection
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/nginx-health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # -- FastAPI Backend --------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # No "container_name" here – allows --scale backend=N replicas
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=10000
+    expose:
+      - "10000"    # only visible inside Docker network (not on host)
+    volumes:
+      # Persist SQLite database across container restarts
+      - ./researcher.db:/app/researcher.db
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:10000/chats')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # -- Next.js Frontend -------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    # No "container_name" – allows scaling if needed
+    restart: unless-stopped
+    environment:
+      # The frontend calls the backend through Nginx (not directly)
+      - NEXT_PUBLIC_API_URL=http://localhost
+    expose:
+      - "3000"    # only visible inside Docker network
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  app-network:
+    driver: bridge
