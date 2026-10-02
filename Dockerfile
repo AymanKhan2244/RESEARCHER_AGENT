@@ -17,6 +17,7 @@ COPY main.py .
 COPY workflow.py .
 COPY model.py .
 COPY guardrail.py .
+COPY database.py .
 COPY guardrials/ ./guardrials/
 
 EXPOSE 10000
