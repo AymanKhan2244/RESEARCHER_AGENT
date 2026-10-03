@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import database
 
 load_dotenv()
-
+#app is the 
 app = FastAPI()
 
 app.add_middleware(
